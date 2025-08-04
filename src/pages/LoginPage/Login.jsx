@@ -2,32 +2,54 @@ import axios from 'axios'
 import React from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import toast from 'react-hot-toast'
 
 const baseUrl = 'https://linked-posts.routemisr.com'
 
+const loginSchema = z.object({
+  email: z
+    .string()
+    .nonempty('Email is required')
+    .regex(
+      /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+      'Invalid email format'
+    ),
+  password: z.string().nonempty('password is required'),
+})
+
 const Login = () => {
-
-
-
-  const { register, handleSubmit } = useForm()
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+  })
 
   const navigate = useNavigate()
 
-  const handleOnSubmit = (data) => {
-    console.log(data)
-    axios
-      .post(`${baseUrl}/users/signin`, data, {
+  const handleOnSubmit = async (data) => {
+    try {
+      const response = await axios.post(`${baseUrl}/users/signin`, data, {
         headers: {
           'Content-Type': 'application/json',
         },
       })
-      .then((response) => {
-        console.log('Login successful:', response.data)
-        navigate('/')
-      })
-      .catch((error) => {
-        console.error('Login failed:', error)
-      })
+
+      if (response.data.message === 'success') {
+        localStorage.setItem('token', response.data.token)
+        toast.success('Login successful!')
+        navigate('/', { replace: true })
+        window.location.reload()
+      }
+    } catch (error) {
+      const errorMessage =
+        error?.response?.data?.message || 'Login failed. Please try again.'
+      toast.error(errorMessage)
+      console.error('Login failed:', error)
+    }
   }
 
   return (
@@ -48,10 +70,13 @@ const Login = () => {
               type="email"
               name="email"
               id="email"
-              {...register('email', { required: true })}
+              {...register('email')}
               className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
               placeholder="name@example.com"
             />
+            {errors.email && (
+              <p className="text-red-500">{errors.email.message}</p>
+            )}
           </div>
           <div>
             <label
@@ -64,11 +89,13 @@ const Login = () => {
               type="password"
               name="password"
               id="password"
-              {...register('password', { required: true })}
+              {...register('password')}
               placeholder="••••••••"
               className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-              required
             />
+            {errors.password && (
+              <p className="text-red-500">{errors.password.message}</p>
+            )}
           </div>
           <button
             type="submit"

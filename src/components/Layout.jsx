@@ -11,9 +11,10 @@ const Layout = () => {
     <div className="bg-gray-50 dark:bg-gray-900 text-white min-h-screen">
       <Navbar />
 
-      <Outlet />
+      <div className="container mx-auto py-5">
+        <Outlet />
+      </div>
 
-      
       <Footer />
     </div>
   )

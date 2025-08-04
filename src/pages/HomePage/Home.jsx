@@ -1,30 +1,126 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { BsThreeDots } from 'react-icons/bs'
+import axios from 'axios'
+import toast from 'react-hot-toast'
+import postImgDefault from '../../assets/default-post-bg.png'
+import profileImgDefault from '../../assets/default-profile-img.png'
+
+const baseUrl = 'https://linked-posts.routemisr.com'
 
 const Home = () => {
+  const [posts, setPosts] = useState([])
+
+  useEffect(() => {
+    getPosts()
+  }, [])
+
+  const getPosts = async () => {
+    try {
+      const response = await axios.get(`${baseUrl}/posts?limit=50`, {
+        headers: {
+          token: localStorage.getItem('token'),
+        },
+      })
+      if (response.data.message === 'success') {
+        setPosts(response.data.posts)
+      } else {
+        toast.error('Failed to load posts.')
+      }
+    } catch (error) {
+      console.error('Error fetching posts:', error)
+      toast.error('Failed to load posts..')
+    }
+  }
+
+
+
   return (
-    <div className="min-h-screen bg-[#0e1629] text-white flex items-center justify-center px-4">
-      <div className="max-w-3xl text-center space-y-6">
-        <h1 className="text-4xl sm:text-6xl font-bold text-white drop-shadow-lg">
-          Welcome to <span className="text-blue-500">Kwittr</span>
-        </h1>
-        <p className="text-lg text-slate-300">
-          A simple, secure, and modern way to connect with others.
-        </p>
-        <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <Link
-            to="/login"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md transition"
-          >
-            Login
-          </Link>
-          <Link
-            to="/register"
-            className="bg-slate-100 text-slate-900 hover:bg-slate-200 px-6 py-3 rounded-md transition"
-          >
-            Register
-          </Link>
-        </div>
+    <div className="min-h-screen bg-[#0e1629] text-white py-10 px-4">
+      <div className="max-w-2xl mx-auto space-y-10">
+        {posts.map((post) => {
+          const {
+            _id,
+            createdAt,
+            body: desc,
+            image: postImg,
+            user: { name, photo },
+            comments,
+          } = post
+
+          const {
+            content: commentContent,
+            createdAt: commentDate,
+            commentCreator: { commentName, commentPhoto },
+          } = comments[0]
+
+          return (
+            <div
+              key={_id}
+              className="bg-gray-900 p-6 rounded-xl shadow-md space-y-4"
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={photo || profileImgDefault}
+                    alt={name}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                  <span className="font-medium">{name}</span>
+                  <p className="text-xs text-slate-400">
+                    {new Date(createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <BsThreeDots className="text-gray-400 cursor-pointer" />
+              </div>
+
+              <p className="text-slate-300">{desc}</p>
+
+              <img
+                src={
+                  postImg?.includes('undefined') || !postImg
+                    ? postImgDefault
+                    : postImg
+                }
+                alt="Post"
+                className="w-full h-auto rounded-lg"
+              />
+
+              <div className="flex justify-between items-center pt-2 text-sm text-slate-400">
+                <Link
+                  to={`/posts/${_id}`}
+                  className="text-blue-400 hover:underline"
+                >
+                  View details
+                </Link>
+                <span>{post.comments.length} comments</span>
+              </div>
+
+              <div className="mt-4 border-t border-gray-700 pt-4">
+                {post.comments.length > 0 && (
+                  <div className="flex gap-3">
+                    <img
+                      src={
+                        commentPhoto?.includes('undefined') || !commentPhoto
+                          ? profileImgDefault
+                          : commentPhoto
+                      }
+                      alt={commentName}
+                      className="w-9 h-9 rounded-full object-cover"
+                    />
+                    <div>
+                      <div className="text-sm font-semibold">{commentName}</div>
+                      <div className="text-xs text-slate-400 mb-1">
+                        {commentDate}
+                      </div>
+                      <p className="text-sm text-slate-200">{commentContent}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
