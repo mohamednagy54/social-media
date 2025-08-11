@@ -9,6 +9,8 @@ import NotFoundPage from './pages/NotFoundPage'
 import { Toaster } from 'react-hot-toast'
 import ProtectedRoute from './pages/ProtectedRoute'
 import SinglePost from './pages/SinglePost/SinglePost'
+import { UserProvider } from './context/UserContext'
+import EditProfile from './pages/EditProfilePage/EditProfile'
 
 const App = () => {
   const routes = createBrowserRouter([
@@ -27,6 +29,7 @@ const App = () => {
         { path: '/login', element: <Login /> },
         { path: '/register', element: <Register /> },
         { path: '/posts/:id', element: <SinglePost /> },
+        { path: '/edit-profile', element: <EditProfile /> },
 
         { path: '*', element: <NotFoundPage /> },
       ],
@@ -35,8 +38,10 @@ const App = () => {
 
   return (
     <>
-      <RouterProvider router={routes} />
-      <Toaster position="top-right" />
+      <UserProvider>
+        <RouterProvider router={routes} />
+        <Toaster position="top-right" />
+      </UserProvider>
     </>
   )
 }
