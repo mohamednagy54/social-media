@@ -26,10 +26,38 @@ const App = () => {
             </ProtectedRoute>
           ),
         },
-        { path: '/login', element: <Login /> },
-        { path: '/register', element: <Register /> },
-        { path: '/posts/:id', element: <SinglePost /> },
-        { path: '/edit-profile', element: <EditProfile /> },
+        {
+          path: '/edit-profile',
+          element: (
+            <ProtectedRoute>
+              <EditProfile />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: '/posts/:id',
+          element: (
+            <ProtectedRoute>
+              <SinglePost />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: '/login',
+          element: (
+            <ProtectedRoute>
+              <Login />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: '/register',
+          element: (
+            <ProtectedRoute>
+              <Register />
+            </ProtectedRoute>
+          ),
+        },
 
         { path: '*', element: <NotFoundPage /> },
       ],

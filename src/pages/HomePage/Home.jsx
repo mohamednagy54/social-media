@@ -47,8 +47,8 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-[#0e1629] text-white py-10 px-4">
-      {/* <CreatePost /> */}
-      <div className="max-w-2xl mx-auto space-y-10">
+      <CreatePost />
+      <div className="max-w-5xl mx-auto space-y-10">
         {loading ? (
           <Loader />
         ) : (

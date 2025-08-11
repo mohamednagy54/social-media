@@ -96,7 +96,7 @@ const Register = () => {
   }
 
   return (
-    <section className="bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center ">
+    <section className="bg-gray-50 dark:bg-[#0e1629] min-h-screen flex items-center justify-center ">
       <div className="w-full max-w-md p-5 bg-white rounded-lg shadow dark:bg-gray-800">
         <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white mb-6">
           Create an account
