@@ -22,8 +22,6 @@ const Navbar = () => {
   return (
     <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-
-        
         <Link to="/" className="flex items-center gap-2">
           <img
             src="https://flowbite.com/docs/images/logo.svg"
@@ -34,7 +32,6 @@ const Navbar = () => {
             Kwittr
           </span>
         </Link>
-
 
         <button
           onClick={() => setMenuOpen(!menuOpen)}
@@ -47,6 +44,34 @@ const Navbar = () => {
           {user ? (
             <>
               <ul className="flex items-center gap-6 text-sm font-medium">
+                <li>
+                  <NavLink
+                    to="/"
+                    className={({ isActive }) =>
+                      `px-3 py-2 rounded-md transition ${
+                        isActive
+                          ? 'text-white bg-blue-600'
+                          : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                      }`
+                    }
+                  >
+                    Home
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink
+                    to="/my-posts"
+                    className={({ isActive }) =>
+                      `px-3 py-2 rounded-md transition ${
+                        isActive
+                          ? 'text-white bg-blue-600'
+                          : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                      }`
+                    }
+                  >
+                    My Posts
+                  </NavLink>
+                </li>
                 <li>
                   <NavLink
                     to="/edit-profile"
@@ -112,11 +137,17 @@ const Navbar = () => {
         </div>
       </div>
 
-      
       {menuOpen && (
         <div className="md:hidden px-4 pb-4 border-t border-gray-200 dark:border-gray-700">
           {user ? (
             <div className="flex flex-col gap-3 mt-3">
+              <NavLink
+                to="/my-posts"
+                className="px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => setMenuOpen(false)}
+              >
+                My Posts
+              </NavLink>
               <NavLink
                 to="/edit-profile"
                 className="px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"

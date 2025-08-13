@@ -7,19 +7,35 @@ import postImgDefault from '../../assets/default-post-bg.png'
 import profileImgDefault from '../../assets/default-profile-img.png'
 import Loader from '../../components/Loader'
 import CreatePost from '../../components/CreatePost'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { UserContext } from '../../context/UserContext'
 import CreateComment from '../../components/CreateComment'
+
+import PostOptions from '../../components/PostOptions'
+import EditPostModal from '../../components/EditPostModal'
 
 const baseUrl = 'https://linked-posts.routemisr.com'
 const sortByDateStr = '&sort=-createdAt'
 
 const Home = () => {
   const [openMenuId, setOpenMenuId] = useState(null)
+  const [editPostData, setEditPostData] = useState(null)
+  
 
-  const queryClient = useQueryClient()
 
-  const getPosts = async () => {
+  const { user } = useContext(UserContext)
+
+  const {
+    data: posts,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ['posts'],
+    queryFn: getPosts,
+    refetchOnWindowFocus: true,
+  })
+
+  async function getPosts() {
     try {
       const response = await axios.get(
         `${baseUrl}/posts?limit=50${sortByDateStr}`,
@@ -40,14 +56,6 @@ const Home = () => {
     }
   }
 
-  const { user } = useContext(UserContext)
-
-  const { data: posts, isLoading } = useQuery({
-    queryKey: ['posts'],
-    queryFn: getPosts,
-    refetchOnWindowFocus: true,
-  })
-
   const handleDeletePost = async (postId) => {
     try {
       const response = await axios.delete(`${baseUrl}/posts/${postId}`, {
@@ -55,11 +63,9 @@ const Home = () => {
           token: localStorage.getItem('token'),
         },
       })
-      
       if (response.data.message === 'success') {
         toast.success('Post deleted Successfully')
-        queryClient.invalidateQueries(['posts'])
-        document.querySelector("form")
+        refetch()
       }
       setOpenMenuId(null)
     } catch (error) {
@@ -68,10 +74,44 @@ const Home = () => {
     }
   }
 
+  const handleUpdatePost = async (data) => {
+    console.log(data)
+
+    try {
+      const { body, image } = data
+
+      const formData = new FormData()
+      formData.append('body', body)
+
+      if (image && image.length > 0) {
+        formData.append('image', image[0])
+      }
+
+      const response = await axios.put(
+        `${baseUrl}/posts/${editPostData._id}`,
+        formData,
+        {
+          headers: {
+            token: localStorage.getItem('token'),
+          },
+        }
+      )
+
+      if (response.data.message === 'success') {
+        toast.success('Post updated successfully')
+        refetch()
+        setEditPostData(null)
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error('Failed to update post')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#0e1629] text-white py-10 px-4">
-      <CreatePost />
-      <div className="max-w-5xl mx-auto space-y-10">
+      <CreatePost refetch={refetch} />
+      <div className="max-w-3xl mx-auto space-y-10">
         {isLoading ? (
           <Loader />
         ) : (
@@ -84,7 +124,16 @@ const Home = () => {
               user: { _id: postCreatorId, name, photo },
               comments,
             } = post
-            
+
+            const isCurrentUser = comments[0]?.commentCreator?._id === user._id
+
+            const commentPhoto = isCurrentUser
+              ? user.photo || profileImgDefault
+              : comments[0]?.commentCreator?.photo.includes('undefined')
+              ? profileImgDefault
+              : comments[0]?.commentCreator?.photo
+
+            const postDate = new Date(createdAt)
 
             return (
               <div
@@ -96,39 +145,34 @@ const Home = () => {
                     <img
                       src={photo || profileImgDefault}
                       alt={name}
-                      className="w-10 h-10 rounded-full object-cover"
+                      className="w-10 h-10 rounded-full"
                     />
-                    <span className="font-medium">{name}</span>
-                    <p className="text-xs text-slate-400">
-                      {new Date(createdAt).toLocaleDateString()}
-                    </p>
+                    <div className="">
+                      <span className="font-medium">{name}</span>
+                      <p className="text-xs text-slate-400  whitespace-nowrap">
+                        {postDate.toLocaleDateString()} - 
+                        <span className="text-xs text-slate-400 ml-1  whitespace-nowrap">
+                          {postDate.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </p>
+                    </div>
                   </div>
 
                   {user._id === postCreatorId && (
-                    <div className="relative">
-                      <BsThreeDots
-                        className="text-gray-400 cursor-pointer"
-                        onClick={() =>
-                          setOpenMenuId(openMenuId === postId ? null : postId)
-                        }
-                      />
-                      {openMenuId === postId && (
-                        <div className="absolute right-0 mt-2 w-40 bg-gray-800 rounded-lg shadow-lg z-10">
-                          <button
-                            className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                            onClick={() => toast('Edit clicked')}
-                          >
-                            Edit Post
-                          </button>
-                          <button
-                            className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700"
-                            onClick={() => handleDeletePost(postId)}
-                          >
-                            Delete Post
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <PostOptions
+                      postId={postId}
+                      desc={desc}
+                      postImg={postImg}
+                      onEdit={(data) => {
+                        setEditPostData(data)
+                      }}
+                      onDelete={handleDeletePost}
+                      openMenuId={openMenuId}
+                      setOpenMenuId={setOpenMenuId}
+                    />
                   )}
                 </div>
 
@@ -141,7 +185,7 @@ const Home = () => {
                       : postImg
                   }
                   alt="Post"
-                  className="w-full h-auto rounded-lg"
+                  className="w-full max-h-[600px] rounded-lg"
                 />
 
                 <div className="flex justify-between items-center pt-2 text-sm text-slate-400">
@@ -151,35 +195,43 @@ const Home = () => {
                   >
                     View details
                   </Link>
-                  <span>{post.comments.length} comments</span>
+                  <span>{comments.length} comments</span>
                 </div>
 
-                <CreateComment postId={postId} />
+                <CreateComment postId={postId} refetch={refetch} />
 
                 {comments.length > 0 && (
-                  <div className="mt-4 border-t border-gray-700 pt-4">
-                    <div className="flex gap-3">
+                  <div className="mt-4 border-t border-gray-700 pt-4 ">
+                    <div className="flex items-center gap-3">
                       <img
-                        src={
-                          comments[0]?.commentCreator?._id === user._id
-                            ? user.photo || profileImgDefault
-                            : comments[0]?.commentCreator?.commentPhoto?.includes(
-                                'undefined'
-                              ) || !comments[0]?.commentCreator?.commentPhoto
-                            ? profileImgDefault
-                            : comments[0]?.commentCreator?.commentPhoto
-                        }
-                        alt={comments[0]?.commentCreator?.commentName}
-                        className="w-9 h-9 rounded-full object-cover"
+                        src={commentPhoto}
+                        alt={comments[0]?.commentCreator?.name}
+                        className="w-9 h-9 rounded-full "
                       />
                       <div>
                         <div className="text-sm font-semibold">
-                          {comments[0]?.commentCreator?.commentName}
+                          {comments[0]?.commentCreator?.name}
                         </div>
-                        <div className="text-xs text-slate-400 mb-1">
-                          {comments[0]?.createdAt}
-                        </div>
-                        <p className="text-sm text-slate-200">
+                        <p className="text-xs text-slate-400 mb-1">
+                          {comments[0]?.createdAt
+                            ? new Date(
+                                comments[0]?.createdAt
+                              ).toLocaleDateString()
+                            : ''}{' '}
+                          -
+                          <span className="text-xs text-slate-400 mb-1 ml-1">
+                            {comments[0]?.createdAt
+                              ? new Date(
+                                  comments[0]?.createdAt
+                                ).toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })
+                              : ''}
+                          </span>
+                        </p>
+
+                        <p className="text-sm text-slate-200 mt-2 px-3 py-2 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-md max-w-fit">
                           {comments[0]?.content}
                         </p>
                       </div>
@@ -191,6 +243,14 @@ const Home = () => {
           })
         )}
       </div>
+
+      {editPostData && (
+        <EditPostModal
+          editPostData={editPostData}
+          onClose={() => setEditPostData(null)}
+          onSubmit={handleUpdatePost}
+        />
+      )}
     </div>
   )
 }

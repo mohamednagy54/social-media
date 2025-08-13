@@ -6,15 +6,17 @@ import toast from 'react-hot-toast'
 import postImgDefault from '../../assets/default-post-bg.png'
 import profileImgDefault from '../../assets/default-profile-img.png'
 import Loader from '../../components/Loader'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { UserContext } from '../../context/UserContext'
+import PostOptions from '../../components/PostOptions'
+import EditPostModal from '../../components/EditPostModal'
 
 const baseUrl = 'https://linked-posts.routemisr.com'
 
-
 const MyPosts = () => {
   const [openMenuId, setOpenMenuId] = useState(null)
-  const queryClient = useQueryClient()
+  const [editPostData, setEditPostData] = useState(null)
+
   const { user } = useContext(UserContext)
 
   const getMyPosts = async () => {
@@ -38,11 +40,15 @@ const MyPosts = () => {
     }
   }
 
-  const { data: posts, isLoading } = useQuery({
+  const {
+    data: posts,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ['myPosts'],
     queryFn: getMyPosts,
     refetchOnWindowFocus: true,
-    enabled: !!user?._id
+    enabled: !!user,
   })
 
   const handleDeletePost = async (postId) => {
@@ -54,12 +60,46 @@ const MyPosts = () => {
       })
       if (response.data.message === 'success') {
         toast.success('Post deleted Successfully')
-        queryClient.invalidateQueries(['myPosts'])
+        refetch()
       }
       setOpenMenuId(null)
     } catch (error) {
       console.error('Error deleting post:', error)
       toast.error('Failed to delete post')
+    }
+  }
+
+  const handleUpdatePost = async (data) => {
+    console.log(data)
+
+    try {
+      const { body, image } = data
+
+      const formData = new FormData()
+      formData.append('body', body)
+
+      if (image && image.length > 0) {
+        formData.append('image', image[0])
+      }
+
+      const response = await axios.put(
+        `${baseUrl}/posts/${editPostData._id}`,
+        formData,
+        {
+          headers: {
+            token: localStorage.getItem('token'),
+          },
+        }
+      )
+
+      if (response.data.message === 'success') {
+        toast.success('Post updated successfully')
+        refetch()
+        setEditPostData(null)
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error('Failed to update post')
     }
   }
 
@@ -95,39 +135,34 @@ const MyPosts = () => {
                       <img
                         src={photo || profileImgDefault}
                         alt={name}
-                        className="w-10 h-10 rounded-full object-cover"
+                        className="w-10 h-10 rounded-full"
                       />
-                      <span className="font-medium">{name}</span>
-                      <p className="text-xs text-slate-400 ml-4 whitespace-nowrap">
-                        {new Date(createdAt).toLocaleDateString()}
-                      </p>
+                      <div className="">
+                        <p className="font-medium text-sm">{name}</p>
+                        <p className="text-xs text-slate-400  whitespace-nowrap">
+                          {new Date(createdAt).toLocaleDateString()}
+                        </p>
+                        <p className="text-xs text-slate-400  whitespace-nowrap">
+                          {new Date(createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute:"2-digit"
+                          })}
+                        </p>
+                      </div>
                     </div>
 
                     {user._id === postCreatorId && (
-                      <div className="relative z-20">
-                        <BsThreeDots
-                          className="text-gray-400 cursor-pointer"
-                          onClick={() =>
-                            setOpenMenuId(openMenuId === postId ? null : postId)
-                          }
-                        />
-                        {openMenuId === postId && (
-                          <div className="absolute right-0 mt-2 w-40 bg-gray-800 rounded-lg shadow-lg z-30">
-                            <button
-                              className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                              onClick={() => toast('Edit clicked')}
-                            >
-                              Edit Post
-                            </button>
-                            <button
-                              className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700"
-                              onClick={() => handleDeletePost(postId)}
-                            >
-                              Delete Post
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      <PostOptions
+                        postId={postId}
+                        desc={desc}
+                        postImg={postImg}
+                        onEdit={(data) => {
+                          setEditPostData(data)
+                        }}
+                        onDelete={handleDeletePost}
+                        openMenuId={openMenuId}
+                        setOpenMenuId={setOpenMenuId}
+                      />
                     )}
                   </div>
 
@@ -162,6 +197,14 @@ const MyPosts = () => {
           </p>
         )}
       </div>
+
+      {editPostData && (
+        <EditPostModal
+          editPostData={editPostData}
+          onClose={() => setEditPostData(null)}
+          onSubmit={handleUpdatePost}
+        />
+      )}
     </div>
   )
 }

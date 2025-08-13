@@ -32,11 +32,7 @@ const Login = () => {
 
   const handleOnSubmit = async (data) => {
     try {
-      const response = await axios.post(`${baseUrl}/users/signin`, data, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+      const response = await axios.post(`${baseUrl}/users/signin`, data)
 
       if (response.data.message === 'success') {
         localStorage.setItem('token', response.data.token)

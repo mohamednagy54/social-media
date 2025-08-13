@@ -3,12 +3,10 @@ import { FaImage } from 'react-icons/fa'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
-import { useQueryClient } from '@tanstack/react-query'
 
-const CreatePost = () => {
-  const { handleSubmit, register, watch } = useForm()
+const CreatePost = ({ refetch }) => {
+  const { handleSubmit, register, watch, reset } = useForm()
   const [preview, setPreview] = useState(null)
-  const queryClient = useQueryClient()
 
   const imageFile = watch('image')
 
@@ -37,9 +35,9 @@ const CreatePost = () => {
 
       if (response.data.message === 'success') {
         toast.success('Post Created Successfully')
-        queryClient.invalidateQueries(["posts"])
         setPreview(null)
-        document.querySelector('form').reset()
+        reset()
+        refetch()
       } else {
         toast.error('Failed to create post')
       }
@@ -49,7 +47,7 @@ const CreatePost = () => {
   }
 
   return (
-    <div className="bg-gray-900 border max-w-5xl mx-auto border-gray-900 rounded-lg p-4 shadow-md mb-6 text-center">
+    <div className="bg-gray-900 border max-w-3xl mx-auto border-gray-900 rounded-lg p-4 shadow-md mb-6 text-center">
       <h2 className="text-white text-lg font-semibold mb-3">
         Create a New Post
       </h2>

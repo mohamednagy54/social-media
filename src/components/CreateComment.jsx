@@ -3,14 +3,12 @@ import { FaImage } from 'react-icons/fa'
 import { useContext } from 'react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
-import { useQueryClient } from '@tanstack/react-query'
+
 import { UserContext } from '../context/UserContext'
 
-const CreateComment = ({ postId }) => {
+const CreateComment = ({ postId, refetch }) => {
   const { handleSubmit, register, reset } = useForm()
   const { user } = useContext(UserContext)
-
-  const queryClient = useQueryClient()
 
   async function handleCreateComment({ content }) {
     try {
@@ -29,13 +27,14 @@ const CreateComment = ({ postId }) => {
 
       if (response.data.message === 'success') {
         toast.success('Comment Created!')
-        queryClient.invalidateQueries(['posts'])
+        refetch()
         reset()
       } else {
         toast.error('Problem while creating comment!')
       }
     } catch (error) {
       console.error('Error:', error)
+      toast.error(error.response.data.error)
     }
   }
 

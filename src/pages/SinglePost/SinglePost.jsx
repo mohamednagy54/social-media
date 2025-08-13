@@ -1,22 +1,35 @@
 import axios from 'axios'
-import React, { useEffect, useState } from 'react'
+import { useState } from 'react'
 import toast from 'react-hot-toast'
-import { BsThreeDots } from 'react-icons/bs'
+
+import { FiArrowLeft } from 'react-icons/fi'
 import { Link, useParams } from 'react-router-dom'
 import postImgDefault from '../../assets/default-post-bg.png'
 import profileImgDefault from '../../assets/default-profile-img.png'
 import Loader from '../../components/Loader'
+import CreateComment from '../../components/CreateComment'
+import { useQuery } from '@tanstack/react-query'
+import { UserContext } from '../../context/UserContext'
+import Comment from '../../components/Comment'
 
 const baseUrl = 'https://linked-posts.routemisr.com'
 
 const SinglePost = () => {
-  const [post, setPost] = useState(null)
   const [visibleComments, setVisibleComments] = useState(5)
-  const [loading, setLoading] = useState(true)
 
   const { id: postId } = useParams()
 
-  const getPostDetails = async () => {
+  const {
+    data: post,
+    refetch,
+    isLoading,
+  } = useQuery({
+    queryKey: ['post'],
+    queryFn: getPostDetails,
+    refetchOnWindowFocus: true,
+  })
+
+  async function getPostDetails() {
     try {
       const response = await axios.get(`${baseUrl}/posts/${postId}`, {
         headers: {
@@ -25,7 +38,7 @@ const SinglePost = () => {
       })
 
       if (response.data.message === 'success') {
-        setPost(response.data.post)
+        return response.data.post
       } else {
         toast.error('Failed to load post.')
       }
@@ -35,11 +48,7 @@ const SinglePost = () => {
     }
   }
 
-  useEffect(() => {
-    getPostDetails()
-  }, [postId])
-
-  if (!post) {
+  if (isLoading || !post) {
     return <Loader />
   }
 
@@ -48,28 +57,45 @@ const SinglePost = () => {
     body: desc,
     createdAt,
     image: postImg,
-    user: { name, photo },
+    user: { name: postCreatorName, photo: postCreatorPhoto },
   } = post
+
+  const postDate = new Date(createdAt)
+
+
 
   return (
     <div className="min-h-screen bg-[#0e1629] text-white py-10 px-4">
+      <Link
+        to="/"
+        className="inline-block text-white hover:text-blue-400 text-2xl"
+        aria-label="Back to home"
+      >
+        <FiArrowLeft />
+      </Link>
+
       {
         <div className="max-w-2xl mx-auto bg-gray-900 p-6 rounded-xl shadow-md space-y-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <img
-                src={photo || profileImgDefault}
-                alt={name}
-                className="w-10 h-10 rounded-full object-cover"
+                src={postCreatorPhoto || profileImgDefault}
+                alt={postCreatorName}
+                className="w-10 h-10 rounded-full "
               />
-              <div>
-                <div className="font-medium">{name}</div>
-                <p className="text-xs text-slate-400">
-                  {new Date(createdAt).toLocaleDateString()}
+              <div className="">
+                <span className="font-medium">{postCreatorName}</span>
+                <p className="text-xs text-slate-400  whitespace-nowrap">
+                  {postDate.toLocaleDateString()}
+                </p>
+                <p className="text-xs text-slate-400  whitespace-nowrap">
+                  {postDate.toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                 </p>
               </div>
             </div>
-            <BsThreeDots className="text-gray-400 cursor-pointer" />
           </div>
 
           <p className="text-slate-300">{desc}</p>
@@ -91,40 +117,18 @@ const SinglePost = () => {
             <span>{comments.length} comments</span>
           </div>
 
+          <CreateComment postId={postId} refetch={refetch} />
+
           {comments?.length > 0 &&
-            comments?.slice(0, visibleComments).map((comment) => {
-              const {
-                _id: commentId,
-                commentCreator: { name: commentName, photo: commentPhoto },
-                content: commentContent,
-                createdAt: commentDate,
-              } = comment
-              return (
-                <div
-                  key={commentId}
-                  className="mt-4 border-t border-gray-700 pt-4"
-                >
-                  <div className="flex gap-3">
-                    <img
-                      src={
-                        commentPhoto?.includes('undefined') || !commentPhoto
-                          ? profileImgDefault
-                          : commentPhoto
-                      }
-                      alt={commentName}
-                      className="w-9 h-9 rounded-full object-cover"
-                    />
-                    <div>
-                      <div className="text-sm font-semibold">{commentName}</div>
-                      <div className="text-xs text-slate-400 mb-1">
-                        {new Date(commentDate).toLocaleDateString()}
-                      </div>
-                      <p className="text-sm text-slate-200">{commentContent}</p>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+            comments
+              ?.slice(0, visibleComments)
+              .map((comment) => (
+                <Comment
+                  key={comment._id}
+                  comment={comment}
+                  refetch={refetch}
+                />
+              ))}
 
           {visibleComments < comments.length && (
             <button
