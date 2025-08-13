@@ -70,7 +70,7 @@ const MyPosts = () => {
   }
 
   const handleUpdatePost = async (data) => {
-    console.log(data)
+    
 
     try {
       const { body, image } = data

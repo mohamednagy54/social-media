@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BsThreeDots } from 'react-icons/bs'
 import axios from 'axios'
@@ -20,8 +20,6 @@ const sortByDateStr = '&sort=-createdAt'
 const Home = () => {
   const [openMenuId, setOpenMenuId] = useState(null)
   const [editPostData, setEditPostData] = useState(null)
-  
-
 
   const { user } = useContext(UserContext)
 
@@ -65,6 +63,7 @@ const Home = () => {
       })
       if (response.data.message === 'success') {
         toast.success('Post deleted Successfully')
+
         refetch()
       }
       setOpenMenuId(null)
@@ -75,7 +74,7 @@ const Home = () => {
   }
 
   const handleUpdatePost = async (data) => {
-    console.log(data)
+    
 
     try {
       const { body, image } = data
@@ -99,6 +98,7 @@ const Home = () => {
 
       if (response.data.message === 'success') {
         toast.success('Post updated successfully')
+
         refetch()
         setEditPostData(null)
       }
@@ -150,7 +150,7 @@ const Home = () => {
                     <div className="">
                       <span className="font-medium">{name}</span>
                       <p className="text-xs text-slate-400  whitespace-nowrap">
-                        {postDate.toLocaleDateString()} - 
+                        {postDate.toLocaleDateString()} -
                         <span className="text-xs text-slate-400 ml-1  whitespace-nowrap">
                           {postDate.toLocaleTimeString([], {
                             hour: '2-digit',
